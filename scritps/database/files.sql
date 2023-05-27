@@ -1,6 +1,6 @@
-CREATE IF NOT EXISTS files (
+CREATE TABLE files (
     id serial,
-    folder_id INT,
+    folder_id SERIAL,
     owner_id serial NOT NULL,
     name VARCHAR(200) NOT NULL,
     type VARCHAR(50) NOT NULL,
@@ -10,6 +10,6 @@ CREATE IF NOT EXISTS files (
     deleted bool NOT NULL DEFAULT false,
 
     PRIMARY KEY(id),
-    CONSTRAINT fk_folders REFERENCES folders(id),
-    CONSTRAINT fk_owner REFERENCES users(id)
+    CONSTRAINT fk_folders FOREIGN KEY(folder_id) REFERENCES folders(id),
+    CONSTRAINT fk_owner FOREIGN KEY(owner_id) REFERENCES users(id)
 );

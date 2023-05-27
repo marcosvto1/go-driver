@@ -1,8 +1,8 @@
-CREATE IF NOT EXISTS TABLE folders(
+CREATE TABLE folders(
     id serial,
     name varchar(60) NOT NULL,
     parent_id INT,
-    created_at TIMESTAMP current_timestamp,
+    created_at TIMESTAMP DEFAULT current_timestamp,
     modifier_at TIMESTAMP NOT NULL,
     deleted bool NOT NULL DEFAULT false,
 
