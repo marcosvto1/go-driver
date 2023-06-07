@@ -6,7 +6,7 @@ CREATE TABLE files (
     type VARCHAR(50) NOT NULL,
     path VARCHAR(250) NOT NULL,
     created_at TIMESTAMP DEFAULT current_timestamp,
-    modifier_at TIMESTAMP NOT NULL,
+    modified_at TIMESTAMP NOT NULL,
     deleted bool NOT NULL DEFAULT false,
 
     PRIMARY KEY(id),
