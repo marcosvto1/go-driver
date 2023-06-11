@@ -34,7 +34,7 @@ func getRootSubFolder(db *sql.DB) ([]Folder, error) {
 	created_at,
 	modified_at,
 	deleted
-	FROM "folders" WHERE parent_id IS NULL "deleted"=false`
+	FROM "folders" WHERE "parent_id" IS NULL "deleted"=false`
 
 	rows, err := db.Query(query)
 	if err != nil {
