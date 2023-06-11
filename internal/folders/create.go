@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
@@ -34,9 +35,11 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 }
 
 func Insert(db *sql.DB, folder *Folder) (id int64, err error) {
+	folder.ModifiedAt = time.Now()
+
 	query := `INSERT INTO "folders" ("name", "parent_id", "modified_at") VALUES ($1, $2, $3)`
 
-	result, err := db.Exec(query, folder.Name, folder.ParentID)
+	result, err := db.Exec(query, folder.Name, folder.ParentID, folder.ModifiedAt)
 	if err != nil {
 		return -1, err
 	}
