@@ -1,6 +1,7 @@
 package folders
 
 import (
+	"regexp"
 	"testing"
 	"time"
 
@@ -28,20 +29,21 @@ func TestRootSubFolder(t *testing.T) {
 		AddRow(
 			1,
 			"any folder name",
-			1,
+			0,
 			time.Now(),
 			time.Now(),
 			false,
 		)
 
-	expectedSQL := `SELECT
-	id,
-	name,
-	parent_id,
-	created_at,
-	modified_at,
-	deleted
-	FROM "folders" WHERE "parent_id" IS NULL (.+)`
+	expectedSQL := regexp.QuoteMeta(`
+	SELECT
+		id,
+		name,
+		parent_id,
+		created_at,
+		modified_at,
+		deleted
+	FROM "folders" WHERE "parent_id" IS NULL "deleted"=false`)
 
 	mock.ExpectQuery(expectedSQL).
 		WillReturnRows(rows)

@@ -14,7 +14,7 @@ func TestInsert(t *testing.T) {
 
 	defer db.Close()
 
-	folder, err := New("any_name_folder", 1)
+	folder, err := New("any_name_folder", 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -22,8 +22,8 @@ func TestInsert(t *testing.T) {
 	expectedQuery := `INSERT INTO "folders" ("name", "parent_id", "modified_at")*`
 	mock.ExpectExec(expectedQuery).
 		WithArgs(
-			folder.Name,
-			folder.ParentID,
+			"any_name_folder",
+			0,
 			sqlmock.AnyArg(),
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))

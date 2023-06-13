@@ -31,10 +31,13 @@ type FolderResource struct {
 	ModifiedAt time.Time `json:"modified_at"`
 }
 
-func New(name string, parentId int64) (*Folder, error) {
+func New(name string, parentID int64) (*Folder, error) {
 	f := Folder{
-		Name:     name,
-		ParentID: parentId,
+		Name: name,
+	}
+
+	if parentID > 0 {
+		f.ParentID = parentID
 	}
 
 	err := f.Validate()

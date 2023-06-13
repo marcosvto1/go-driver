@@ -1,6 +1,7 @@
 package folders
 
 import (
+	"regexp"
 	"testing"
 	"time"
 
@@ -35,14 +36,15 @@ func TestGetFolder(t *testing.T) {
 			false,
 		)
 
-	expectedSQL := `SELECT
-	id,
-	name,
-	parent_id,
-	created_at,
-	modified_at,
-	deleted
-	FROM "folders" *`
+	expectedSQL := regexp.QuoteMeta(`
+	SELECT
+		id,
+		name,
+		parent_id,
+		created_at,
+		modified_at,
+		deleted
+	FROM "folders" where id=$1`)
 
 	mock.ExpectQuery(expectedSQL).
 		WithArgs(1).
@@ -80,22 +82,32 @@ func TestGetSubFolder(t *testing.T) {
 
 	rows := sqlmock.NewRows(columns).
 		AddRow(
-			1,
+			2,
 			"any folder name",
-			1,
+			2,
+			time.Now(),
+			time.Now(),
+			false,
+		).
+		AddRow(
+			2,
+			"any folder name 2",
+			3,
 			time.Now(),
 			time.Now(),
 			false,
 		)
 
-	expectedSQL := `SELECT
-	id,
-	name,
-	parent_id,
-	created_at,
-	modified_at,
-	deleted
-	FROM "folders" where parent_id *`
+	expectedSQL := regexp.QuoteMeta(`
+	SELECT
+		id,
+		name,
+		parent_id,
+		created_at,
+		modified_at,
+		deleted
+	FROM "folders" where parent_id=$1`,
+	)
 
 	mock.ExpectQuery(expectedSQL).
 		WithArgs(1).
@@ -106,7 +118,7 @@ func TestGetSubFolder(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.Equal(t, len(folders), 1)
+	assert.Equal(t, len(folders), 2)
 
 	err = mock.ExpectationsWereMet()
 	if err != nil {

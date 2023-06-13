@@ -2,6 +2,8 @@ package files
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
@@ -15,17 +17,20 @@ func TestList(t *testing.T) {
 	}
 	defer db.Close()
 
-	expectedQuery := `SELECT
-	id,
-	name,
-	folder_id,
-	owner_id,
-	type,
-	path,
-	created_at,
-	modified_at,
-	deleted
-	FROM files *`
+	expectedQuery := regexp.QuoteMeta(`SELECT
+		id,
+		name,
+		folder_id,
+		owner_id,
+		type,
+		path,
+		created_at,
+		modified_at,
+		deleted
+		FROM files
+	WHERE folder_id = $1 AND deleted = false`)
+
+	fmt.Println(expectedQuery)
 
 	folderID := 1
 
@@ -77,7 +82,7 @@ func TestListRoot(t *testing.T) {
 	}
 	defer db.Close()
 
-	expectedQuery := `SELECT
+	expectedQuery := regexp.QuoteMeta(`SELECT
 	id,
 	name,
 	folder_id,
@@ -88,9 +93,7 @@ func TestListRoot(t *testing.T) {
 	modified_at,
 	deleted
 	FROM files
-	WHERE (.+)`
-
-	folderID := 1
+	WHERE folder_id IS NULL AND deleted = false`)
 
 	rows := sqlmock.NewRows([]string{
 		"id",
@@ -117,7 +120,7 @@ func TestListRoot(t *testing.T) {
 	mock.ExpectQuery(expectedQuery).
 		WillReturnRows(rows)
 
-	files, err := List(db, int64(folderID))
+	files, err := ListRootFiles(db)
 	if err != nil {
 		t.Error(err)
 	}
