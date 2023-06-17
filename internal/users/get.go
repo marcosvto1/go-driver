@@ -23,6 +23,7 @@ func (h *handler) GetById(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	rw.WriteHeader(http.StatusOK)
 	rw.Header().Add("Content-Type", "application/type")
 	json.NewEncoder(rw).Encode(user)
 }
@@ -30,8 +31,8 @@ func (h *handler) GetById(rw http.ResponseWriter, r *http.Request) {
 func Get(db *sql.DB, id int64) (*User, error) {
 	user := User{}
 	q := `
-		SELECT id, name, login, password, created_at, modified_at, deleted, last_login 
-		FROM users 
+		SELECT id, name, login, password, created_at, modified_at, deleted, last_login
+		FROM users
 		WHERE id = $1"
 	`
 	err := db.QueryRow(q, id).Scan(
