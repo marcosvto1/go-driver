@@ -16,6 +16,7 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
+		fmt.Println(err)
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -73,6 +74,7 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	rw.WriteHeader(http.StatusCreated)
 	rw.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(entity)
 }

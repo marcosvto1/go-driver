@@ -10,6 +10,7 @@ import (
 
 const (
 	AwsProvider BucketType = iota
+	MockProvider
 )
 
 type BucketType int
@@ -25,6 +26,8 @@ type Bucket struct {
 }
 
 func New(bt BucketType, cfg any) (b *Bucket, err error) {
+	b = new(Bucket)
+
 	providerConfig := reflect.TypeOf(cfg)
 	switch bt {
 	case AwsProvider:
@@ -33,6 +36,10 @@ func New(bt BucketType, cfg any) (b *Bucket, err error) {
 		}
 
 		b.provider = newAwsProvider(cfg.(AwsProviderConfig))
+	case MockProvider:
+		b.provider = &MockBucket{
+			content: make(map[string][]byte),
+		}
 	default:
 		log.Fatal("type not implemented")
 	}

@@ -2,7 +2,6 @@ package files
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -29,8 +28,6 @@ func TestList(t *testing.T) {
 		deleted
 		FROM files
 	WHERE folder_id = $1 AND deleted = false`)
-
-	fmt.Println(expectedQuery)
 
 	folderID := 1
 

@@ -52,7 +52,7 @@ func TestDeleteOne(t *testing.T) {
 	h.Delete(recorder, request)
 
 	// Check the response status code
-	if recorder.Code != http.StatusOK {
+	if recorder.Code != http.StatusNoContent {
 		t.Errorf("Expected status code %d, but got %d", http.StatusOK, recorder.Code)
 	}
 

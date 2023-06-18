@@ -23,7 +23,6 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	err = folder.Validate()
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
@@ -36,8 +35,13 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	f, err := GetFolder(h.db, int64(id))
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+	}
+
 	rw.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(rw).Encode(folder)
+	json.NewEncoder(rw).Encode(f)
 }
 
 func Update(db *sql.DB, id int64, folder *Folder) error {

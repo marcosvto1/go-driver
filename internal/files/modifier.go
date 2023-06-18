@@ -35,19 +35,20 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = Update(h.db, int64(4), file)
+	err = Update(h.db, int64(id), file)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	rw.WriteHeader(http.StatusNoContent)
 	rw.Header().Add("Content-Type", "application/json")
 }
 
 func Update(db *sql.DB, id int64, f *File) error {
 	f.ModifiedAt = time.Now()
 
-	query := `UPDATE "files" SET "name"=$1, "modified_at"=$2, "deleted_at"=$3 where id = $4`
+	query := `UPDATE "files" SET "name"=$1, "modified_at"=$2, "deleted"=$3 where id = $4`
 
 	_, err := db.Exec(query, f.Name, f.ModifiedAt, f.Deleted, id)
 	if err != nil {

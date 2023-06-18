@@ -2,6 +2,7 @@ package folders
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -51,6 +52,8 @@ func deleteSubFolders(db *sql.DB, folderId int64) error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Println(len(listOfSubfolder))
 
 	removedSubFolders := make([]Folder, 0, len(listOfSubfolder))
 	for _, sf := range listOfSubfolder {

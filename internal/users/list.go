@@ -12,6 +12,7 @@ func (h *handler) List(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
 
+	rw.WriteHeader(http.StatusOK)
 	rw.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(users)
 }
