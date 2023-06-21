@@ -5,79 +5,38 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreate(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
-
-	h := handler{
-		db,
-	}
-
-	u := User{
-		Name:     "Marcos",
-		Login:    "marcosvto1@gmail.com",
-		Password: "123456",
-	}
-
+func (ts *TransactionSuite) TestCreate() {
 	var b bytes.Buffer
-	err = json.NewEncoder(&b).Encode(&u)
-	if err != nil {
-		t.Error(err)
-	}
+	err := json.NewEncoder(&b).Encode(&ts.entity)
+	assert.NoError(ts.T(), err)
 
 	rr := httptest.NewRecorder()
 
 	req := httptest.NewRequest(http.MethodPost, "/users", &b)
 
-	u.SetPassword(u.Password)
+	ts.entity.SetPassword(ts.entity.Password)
 
-	mock.ExpectExec(`INSERT INTO "users" ("name", "login", "password", "modified_at")*`).
-		WithArgs("Marcos", "marcosvto1@gmail.com", u.Password, u.ModifiedAt).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+	setMockInsert(ts.mock, ts.entity)
 
-	h.Create(rr, req)
+	ts.handler.Create(rr, req)
 
-	assert.Equal(t, http.StatusCreated, rr.Result().StatusCode)
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Equal(ts.T(), http.StatusCreated, rr.Result().StatusCode)
 }
 
-func TestInsert(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
+func (ts *TransactionSuite) TestInsert() {
+	setMockInsert(ts.mock, ts.entity)
 
-	defer db.Close()
+	_, err := Insert(ts.conn, ts.entity)
+	assert.NoError(ts.T(), err)
+}
 
-	u, err := New("Marcos", "marcosvto1@gmail.com", "123456")
-	if err != nil {
-		t.Error(err)
-	}
-
+func setMockInsert(mock sqlmock.Sqlmock, entity *User) {
 	mock.ExpectExec(`INSERT INTO "users" ("name", "login", "password", "modified_at")*`).
-		WithArgs("Marcos", "marcosvto1@gmail.com", u.Password, u.ModifiedAt).
+		WithArgs("Marcos", "marcosvto1@gmail.com", entity.Password, entity.ModifiedAt).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	_, err = Insert(db, u)
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
 }

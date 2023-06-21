@@ -7,89 +7,50 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
-	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestModify(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
+func (ts *TransactionSuite) TestModify() {
+	defer ts.conn.Close()
 
 	u := User{
 		Name: "Marcos",
 	}
-	var b bytes.Buffer
 
-	err = json.NewEncoder(&b).Encode(&u)
-	if err != nil {
-		t.Error(err)
-	}
+	var b bytes.Buffer
+	err := json.NewEncoder(&b).Encode(&u)
+	assert.NoError(ts.T(), err)
 
 	ctx := chi.NewRouteContext()
 	ctx.URLParams.Add("id", "1")
 
-	wr := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPut, "/{id}", &b)
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPut, "/{id}", &b)
+	request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, ctx))
 
-	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, ctx))
+	setMockModifier(ts.mock, ts.entity)
+	setMockSelect(ts.mock)
 
-	h := handler{
-		db,
-	}
+	ts.handler.Modify(recorder, request)
 
-	expectedSQL := regexp.QuoteMeta(`UPDATE "users" SET "name"=$1, "modified_at"=$4 WHERE id=$5`)
-	mock.ExpectExec(expectedSQL).
-		WithArgs(u.Name, sqlmock.AnyArg(), 1).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	expectedSelectSQL := regexp.QuoteMeta(`
-		SELECT id, name, login, password, created_at, modified_at, deleted, last_login
-		FROM users
-		WHERE id = $1"
-	`)
-	rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
-		AddRow(1, "Marcos", "marcos@email", "123", time.Now(), time.Now(), false, time.Now())
-	mock.ExpectQuery(expectedSelectSQL).WithArgs(int64(1)).
-		WillReturnRows(rows)
-
-	h.Modify(wr, r)
-
-	assert.Equal(t, http.StatusOK, wr.Result().StatusCode)
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Equal(ts.T(), http.StatusOK, recorder.Result().StatusCode)
 }
 
-func TestUpdate(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
+func (ts *TransactionSuite) TestUpdate() {
+	defer ts.conn.Close()
 
-	defer db.Close()
+	setMockModifier(ts.mock, ts.entity)
 
-	u, err := New("Marcos", "marcosvto1@gmail.com", "1234567")
-	if err != nil {
-		t.Error(err)
-	}
+	err := Update(ts.conn, int64(1), ts.entity)
+	assert.NoError(ts.T(), err)
+}
 
+func setMockModifier(mock sqlmock.Sqlmock, entity *User) {
 	expectedSQL := regexp.QuoteMeta(`UPDATE "users" SET "name"=$1, "modified_at"=$4 WHERE id=$5`)
-
 	mock.ExpectExec(expectedSQL).
-		WithArgs(u.Name, AnyTime{}, 1).
+		WithArgs(entity.Name, AnyTime{}, 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	err = Update(db, int64(1), u)
-	if err != nil {
-		t.Error(err)
-	}
 }

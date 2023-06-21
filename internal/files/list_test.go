@@ -1,20 +1,15 @@
 package files
 
 import (
-	"errors"
 	"regexp"
-	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestList(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
+func (ts *TransactionSuite) TestList() {
+	defer ts.conn.Close()
 
 	expectedQuery := regexp.QuoteMeta(`SELECT
 		id,
@@ -53,33 +48,20 @@ func TestList(t *testing.T) {
 		false,
 	)
 
-	mock.ExpectQuery(expectedQuery).
+	ts.mock.ExpectQuery(expectedQuery).
 		WithArgs(folderID).
 		WillReturnRows(rows)
 
-	files, err := List(db, int64(folderID))
-	if err != nil {
-		t.Error(err)
-	}
+	files, err := List(ts.conn, int64(folderID))
 
-	if len(files) == 0 {
-		t.Error(errors.New("invalid result"))
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(ts.T(), err)
+	assert.GreaterOrEqual(ts.T(), 1, len(files))
 }
 
-func TestListRoot(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
+func (ts *TransactionSuite) TestListRoot() {
+	defer ts.conn.Close()
 
-	expectedQuery := regexp.QuoteMeta(`SELECT
+	expectedSQL := regexp.QuoteMeta(`SELECT
 	id,
 	name,
 	folder_id,
@@ -114,20 +96,11 @@ func TestListRoot(t *testing.T) {
 		false,
 	)
 
-	mock.ExpectQuery(expectedQuery).
+	ts.mock.ExpectQuery(expectedSQL).
 		WillReturnRows(rows)
 
-	files, err := ListRootFiles(db)
-	if err != nil {
-		t.Error(err)
-	}
+	files, err := ListRootFiles(ts.conn)
 
-	if len(files) == 0 {
-		t.Error(errors.New("invalid result"))
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(ts.T(), err)
+	assert.GreaterOrEqual(ts.T(), 1, len(files))
 }

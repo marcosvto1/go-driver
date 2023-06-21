@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -12,18 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetById(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-
-	defer db.Close()
-
-	h := handler{
-		db,
-	}
-
+func (ts *TransactionSuite) TestGetById() {
 	ctx := chi.NewRouteContext()
 	ctx.URLParams.Add("id", "1")
 
@@ -31,33 +19,24 @@ func TestGetById(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/{id}", nil)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
 
-	rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
-		AddRow(1, "Marcos", "marcos@email", "123", time.Now(), time.Now(), false, time.Now())
+	setMockSelect(ts.mock)
 
-	mock.ExpectQuery(`SELECT id, name, login, password, created_at, modified_at, deleted, last_login
-		FROM users
-		WHERE *
-	`).WithArgs(int64(1)).
-		WillReturnRows(rows)
+	ts.handler.GetById(rw, req)
 
-	h.GetById(rw, req)
-
-	assert.Equal(t, http.StatusOK, rw.Result().StatusCode)
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Equal(ts.T(), http.StatusOK, rw.Result().StatusCode)
 }
 
-func TestGet(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
+func (ts *TransactionSuite) TestGet() {
+	setMockSelect(ts.mock)
 
-	defer db.Close()
+	userResult, err := Get(ts.conn, int64(1))
+	assert.NoError(ts.T(), err)
 
+	assert.Equal(ts.T(), "Marcos", userResult.Name)
+	assert.Equal(ts.T(), "marcos@email", userResult.Login)
+}
+
+func setMockSelect(mock sqlmock.Sqlmock) {
 	rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
 		AddRow(1, "Marcos", "marcos@email", "123", time.Now(), time.Now(), false, time.Now())
 
@@ -66,18 +45,4 @@ func TestGet(t *testing.T) {
 		WHERE *
 	`).WithArgs(int64(1)).
 		WillReturnRows(rows)
-
-	userResult, err := Get(db, int64(1))
-	if err != nil {
-		t.Error(err)
-	}
-
-	assert.Equal(t, "Marcos", userResult.Name)
-	assert.Equal(t, "marcos@email", userResult.Login)
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
-
 }

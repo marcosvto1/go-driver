@@ -8,7 +8,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/lib/pq v1.10.9
 	github.com/rabbitmq/amqp091-go v1.8.1
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.4
 )
 
 require (

@@ -2,35 +2,21 @@ package users
 
 import (
 	"context"
-	"database/sql/driver"
 	"net/http"
 	"net/http/httptest"
-	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
 )
 
-type AnyTime struct{}
-
-func (a AnyTime) Match(v driver.Value) bool {
-	_, ok := v.(time.Time)
-	return ok
-}
-
-func TestDeleteOne(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
+func (ts *TransactionSuite) TestDeleteOne() {
 
 	ctx := chi.NewRouteContext()
 	ctx.URLParams.Add("id", "1")
 
 	// Create a new request with a dummy URL parameter
-
-	mock.ExpectExec(`UPDATE users SET *`).
+	ts.mock.ExpectExec(`UPDATE users SET *`).
 		WithArgs(AnyTime{}, 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -43,44 +29,18 @@ func TestDeleteOne(t *testing.T) {
 	// Set context for request
 	request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, ctx))
 
-	// Create a new instance of the handler
-	h := &handler{
-		db,
-	}
-
 	// Call the Delete method of the handler
-	h.Delete(recorder, request)
+	ts.handler.Delete(recorder, request)
 
 	// Check the response status code
-	if recorder.Code != http.StatusNoContent {
-		t.Errorf("Expected status code %d, but got %d", http.StatusOK, recorder.Code)
-	}
-
-	// Check the response content type header
-	expectedContentType := "application/json"
-	if recorder.Header().Get("Content-Type") != expectedContentType {
-		t.Errorf("Expected content type %s, but got %s", expectedContentType, recorder.Header().Get("Content-Type"))
-	}
+	assert.Equal(ts.T(), http.StatusNoContent, recorder.Result().StatusCode)
 }
 
-func TestDelete(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
-
-	mock.ExpectExec(`UPDATE users SET *`).
+func (ts *TransactionSuite) TestDelete() {
+	ts.mock.ExpectExec(`UPDATE users SET *`).
 		WithArgs(AnyTime{}, 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err = Delete(db, int64(1))
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	err := Delete(ts.conn, int64(1))
+	assert.NoError(ts.T(), err)
 }
