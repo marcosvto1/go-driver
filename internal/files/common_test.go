@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/marcosvto1/go-driver/internal/bucket"
+	"github.com/marcosvto1/go-driver/internal/queue"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -23,8 +25,16 @@ func (ts *TransactionSuite) SetupTest() {
 	ts.conn, ts.mock, err = sqlmock.New()
 	assert.NoError(ts.T(), err)
 
+	mQueue, err := queue.New(queue.MockQueue, nil)
+	assert.NoError(ts.T(), err)
+
+	mBucket, err := bucket.New(bucket.MockProvider, nil)
+	assert.NoError(ts.T(), err)
+
 	ts.handler = handler{
-		db: ts.conn,
+		db:     ts.conn,
+		queue:  mQueue,
+		bucket: mBucket,
 	}
 
 	ts.entity = &File{

@@ -7,28 +7,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
-	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi/v5"
-	"github.com/marcosvto1/go-driver/internal/bucket"
-	"github.com/marcosvto1/go-driver/internal/queue"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestModify(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-
-	defer db.Close()
-
-	file, err := New(1, "Name", "ext", "/your/path")
-	if err != nil {
-		t.Error(err)
-	}
+func (ts *TransactionSuite) TestModify() {
+	defer ts.conn.Close()
 
 	rows := sqlmock.NewRows([]string{
 		"id",
@@ -43,7 +30,7 @@ func TestModify(t *testing.T) {
 	}).
 		AddRow(1, "any_name", 1, 1, "file", "/any/path", time.Now(), time.Now(), false)
 
-	mock.ExpectQuery(
+	ts.mock.ExpectQuery(
 		`SELECT
 		id,
 		name,
@@ -57,25 +44,9 @@ func TestModify(t *testing.T) {
 	FROM "files" * `,
 	).WithArgs(1).WillReturnRows(rows)
 
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "files" SET "name"=$1, "modified_at"=$2, "deleted"=$3 where id = $4`)).
-		WithArgs("any_name2", sqlmock.AnyArg(), file.Deleted, 1).
+	ts.mock.ExpectExec(regexp.QuoteMeta(`UPDATE "files" SET "name"=$1, "modified_at"=$2, "deleted"=$3 where id = $4`)).
+		WithArgs("any_name2", sqlmock.AnyArg(), false, 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	mQueue, err := queue.New(queue.MockQueue, nil)
-	if err != nil {
-		t.Error(err)
-	}
-
-	mBucket, err := bucket.New(bucket.MockProvider, nil)
-	if err != nil {
-		t.Error(err)
-	}
-
-	h := handler{
-		db:     db,
-		queue:  mQueue,
-		bucket: mBucket,
-	}
 
 	var b bytes.Buffer
 	f := File{
@@ -85,10 +56,8 @@ func TestModify(t *testing.T) {
 		Type:    "file",
 	}
 
-	err = json.NewEncoder(&b).Encode(f)
-	if err != nil {
-		t.Error(err)
-	}
+	err := json.NewEncoder(&b).Encode(f)
+	assert.NoError(ts.T(), err)
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPut, "/{id}", &b)
@@ -98,40 +67,18 @@ func TestModify(t *testing.T) {
 	ctx.URLParams.Add("id", "1")
 	request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, ctx))
 
-	h.Modify(recorder, request)
+	ts.handler.Modify(recorder, request)
 
-	assert.Equal(t, http.StatusNoContent, recorder.Result().StatusCode)
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Equal(ts.T(), http.StatusNoContent, recorder.Result().StatusCode)
 }
 
-func TestUpdate(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
+func (ts *TransactionSuite) TestUpdate() {
+	defer ts.conn.Close()
 
-	defer db.Close()
-
-	file, err := New(1, "Name", "ext", "/your/path")
-	if err != nil {
-		t.Error(err)
-	}
-
-	mock.ExpectExec(`UPDATE "files" SET`).
-		WithArgs(file.Name, sqlmock.AnyArg(), file.Deleted, 1).
+	ts.mock.ExpectExec(regexp.QuoteMeta(`UPDATE "files" SET "name"=$1, "modified_at"=$2, "deleted"=$3 where id = $4`)).
+		WithArgs(ts.entity.Name, sqlmock.AnyArg(), false, 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err = Update(db, int64(1), file)
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	err := Update(ts.conn, int64(1), ts.entity)
+	assert.NoError(ts.T(), err)
 }

@@ -2,55 +2,34 @@ package files
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"testing"
+	"regexp"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/marcosvto1/go-driver/internal/bucket"
-	"github.com/marcosvto1/go-driver/internal/queue"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreate(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
+func (ts *TransactionSuite) TestCreate() {
+	defer ts.conn.Close()
 
-	mock.ExpectExec(`INSERT INTO files (folder_id, owner_id, name, type, path, modified_at)*`).
-		WithArgs(
-			1,
-			1,
-			"file.csv",
-			"application/octet-stream",
-			"/file.csv",
-			sqlmock.AnyArg(),
-		).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+	setMockInsert(ts.mock, ts.entity)
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 
 	// Alternative Upload with local file
 	file, err := os.Open("./testdata/file.csv")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(ts.T(), err)
+
 	wf, err := writer.CreateFormFile("file", "file.csv")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(ts.T(), err)
 
 	_, err = io.Copy(wf, file)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(ts.T(), err)
 
 	writer.WriteField("folder_id", "1")
 
@@ -63,62 +42,33 @@ func TestCreate(t *testing.T) {
 	request := httptest.NewRequest(http.MethodPost, "/", body)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 
-	// Configure Mocks Dependecy
-	mQueue, err := queue.New(queue.MockQueue, nil)
-	if err != nil {
-		fmt.Println(err)
-		t.Error(err)
-	}
+	ts.handler.Create(recorder, request)
 
-	mBucket, err := bucket.New(bucket.MockProvider, nil)
-	if err != nil {
-		t.Error(err)
-	}
-
-	h := handler{
-		db:     db,
-		queue:  mQueue,
-		bucket: mBucket,
-	}
-
-	h.Create(recorder, request)
-
-	t.Log("It should respond with an HTTP status code of 201")
-	assert.Equal(t, http.StatusCreated, recorder.Result().StatusCode)
+	ts.T().Log("It should respond with an HTTP status code of 201")
+	assert.Equal(ts.T(), http.StatusCreated, recorder.Result().StatusCode)
 }
-func TestInsertOne(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
 
-	defer db.Close()
+func (ts *TransactionSuite) TestInsertOne() {
+	defer ts.conn.Close()
 
-	file, err := New(int64(1), "file", "jpg", "/any/path")
-	if err != nil {
-		t.Error(err)
-	}
+	setMockInsert(ts.mock, ts.entity)
 
-	file.FolderId = 1
+	_, err := InsertOne(ts.conn, ts.entity)
+	assert.NoError(ts.T(), err)
+}
 
-	mock.ExpectExec(`INSERT INTO files (folder_id, owner_id, name, type, path, modified_at)*`).
+func setMockInsert(mock sqlmock.Sqlmock, entity *File) {
+	expectedSQL := regexp.QuoteMeta(`INSERT INTO files (folder_id, owner_id, name, type, path, modified_at)
+	VALUES ($1, $2, $3, $4, $5, $6)`)
+
+	mock.ExpectExec(expectedSQL).
 		WithArgs(
 			1,
 			1,
-			"file",
-			"jpg",
-			"/any/path",
+			"file.csv",
+			"application/octet-stream",
+			"/file.csv",
 			sqlmock.AnyArg(),
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	_, err = InsertOne(db, file)
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
 }
