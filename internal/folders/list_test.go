@@ -2,19 +2,14 @@ package folders
 
 import (
 	"regexp"
-	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRootSubFolder(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
+func (ts *TransactionSuite) TestRootSubFolder() {
+	defer ts.conn.Close()
 
 	columns := []string{
 		"id",
@@ -45,18 +40,11 @@ func TestRootSubFolder(t *testing.T) {
 		deleted
 	FROM "folders" WHERE "parent_id" IS NULL "deleted"=false`)
 
-	mock.ExpectQuery(expectedSQL).
+	ts.mock.ExpectQuery(expectedSQL).
 		WillReturnRows(rows)
 
-	folders, err := getRootSubFolder(db)
-	if err != nil {
-		t.Error(err)
-	}
+	folders, err := getRootSubFolder(ts.conn)
 
-	assert.Equal(t, len(folders), 1)
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(ts.T(), err)
+	assert.Equal(ts.T(), len(folders), 1)
 }

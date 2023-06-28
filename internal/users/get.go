@@ -18,7 +18,10 @@ func (h *handler) GetById(rw http.ResponseWriter, r *http.Request) {
 
 	user, err := Get(h.db, int64(id))
 	if err != nil {
-		// TODO: validar se o err e pq não existe nenhum registro
+		if err == sql.ErrNoRows {
+			http.Error(rw, err.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}

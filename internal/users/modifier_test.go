@@ -32,7 +32,7 @@ func (ts *TransactionSuite) TestModify() {
 	request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, ctx))
 
 	setMockModifier(ts.mock, ts.entity)
-	setMockSelect(ts.mock)
+	setMockSelect(ts.mock, false, nil)
 
 	ts.handler.Modify(recorder, request)
 

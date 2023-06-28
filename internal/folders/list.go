@@ -3,7 +3,6 @@ package folders
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/marcosvto1/go-driver/internal/files"
@@ -55,7 +54,6 @@ func getRootSubFolder(db *sql.DB) ([]Folder, error) {
 		)
 
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
 

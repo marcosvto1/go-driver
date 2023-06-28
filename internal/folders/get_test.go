@@ -2,20 +2,14 @@ package folders
 
 import (
 	"regexp"
-	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetFolder(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-
-	defer db.Close()
+func (ts *TransactionSuite) TestGetFolder() {
+	defer ts.conn.Close()
 
 	columns := []string{
 		"id",
@@ -46,30 +40,18 @@ func TestGetFolder(t *testing.T) {
 		deleted
 	FROM "folders" where id=$1`)
 
-	mock.ExpectQuery(expectedSQL).
+	ts.mock.ExpectQuery(expectedSQL).
 		WithArgs(1).
 		WillReturnRows(rows)
 
-	folder, err := GetFolder(db, 1)
-	if err != nil {
-		t.Error(err)
-	}
+	folder, err := GetFolder(ts.conn, 1)
 
-	assert.Equal(t, folder.Name, "any folder name")
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(ts.T(), err)
+	assert.Equal(ts.T(), folder.Name, "any folder name")
 }
 
-func TestGetSubFolder(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-
-	defer db.Close()
+func (ts *TransactionSuite) TestGetSubFolder() {
+	defer ts.conn.Close()
 
 	columns := []string{
 		"id",
@@ -109,19 +91,12 @@ func TestGetSubFolder(t *testing.T) {
 	FROM "folders" where parent_id=$1`,
 	)
 
-	mock.ExpectQuery(expectedSQL).
+	ts.mock.ExpectQuery(expectedSQL).
 		WithArgs(1).
 		WillReturnRows(rows)
 
-	folders, err := getSubFolder(db, 1)
-	if err != nil {
-		t.Error(err)
-	}
+	folders, err := getSubFolder(ts.conn, 1)
 
-	assert.Equal(t, len(folders), 2)
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(ts.T(), err)
+	assert.Equal(ts.T(), len(folders), 2)
 }

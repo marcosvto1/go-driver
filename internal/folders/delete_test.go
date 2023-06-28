@@ -5,19 +5,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
-	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestDeleteHTTP(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
+func (ts *TransactionSuite) TestDeleteHTTP() {
+	defer ts.conn.Close()
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodDelete, "/{id}", nil)
@@ -62,11 +58,11 @@ WHERE folder_id = $1 AND deleted = false`)
 		false,
 	)
 
-	mock.ExpectQuery(expectedQuery).
+	ts.mock.ExpectQuery(expectedQuery).
 		WithArgs(folderID).
 		WillReturnRows(rows)
 
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "files" SET "name"=$1, "modified_at"=$2, "deleted"=$3 where id = $4`)).
+	ts.mock.ExpectExec(regexp.QuoteMeta(`UPDATE "files" SET "name"=$1, "modified_at"=$2, "deleted"=$3 where id = $4`)).
 		WithArgs("any_name", sqlmock.AnyArg(), true, 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -108,49 +104,28 @@ WHERE folder_id = $1 AND deleted = false`)
 		FROM "folders" where parent_id=$1`,
 	)
 
-	mock.ExpectQuery(expectedSQL).
+	ts.mock.ExpectQuery(expectedSQL).
 		WithArgs(1).
 		WillReturnRows(rootrows)
 
 	expectedQueryDeleteFolder := regexp.QuoteMeta(`UPDATE "folders" SET "modified_at"=$1, "deleted"=true WHERE id=$2`)
 
-	mock.ExpectExec(expectedQueryDeleteFolder).
+	ts.mock.ExpectExec(expectedQueryDeleteFolder).
 		WithArgs(sqlmock.AnyArg(), 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	h := handler{
-		db: db,
-	}
-
-	h.Delete(recorder, request)
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	ts.handler.Delete(recorder, request)
 }
 
-func TestDelete(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-
-	defer db.Close()
+func (ts *TransactionSuite) TestDelete() {
+	defer ts.conn.Close()
 
 	expectedQuery := regexp.QuoteMeta(`UPDATE "folders" SET "modified_at"=$1, "deleted"=true WHERE id=$2`)
 
-	mock.ExpectExec(expectedQuery).
+	ts.mock.ExpectExec(expectedQuery).
 		WithArgs(sqlmock.AnyArg(), 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err = Delete(db, int64(1))
-	if err != nil {
-		t.Error(t)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(t)
-	}
+	err := Delete(ts.conn, int64(1))
+	assert.NoError(ts.T(), err)
 }

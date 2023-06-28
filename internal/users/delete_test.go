@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 
@@ -11,36 +12,58 @@ import (
 )
 
 func (ts *TransactionSuite) TestDeleteOne() {
+	// define test case
+	tcs := []struct {
+		ID               string
+		ExpectStatusCode int
+		WithMock         bool
+		WithMockError    bool
+	}{
+		{ID: "1", ExpectStatusCode: http.StatusNoContent, WithMock: true, WithMockError: false},
+		{ID: "A", ExpectStatusCode: http.StatusInternalServerError, WithMock: false, WithMockError: false},
+		{ID: "1", ExpectStatusCode: http.StatusInternalServerError, WithMock: true, WithMockError: true},
+	}
 
-	ctx := chi.NewRouteContext()
-	ctx.URLParams.Add("id", "1")
+	for _, tc := range tcs {
+		// Create a new context with a dummy URL parameter
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", tc.ID)
 
-	// Create a new request with a dummy URL parameter
-	ts.mock.ExpectExec(`UPDATE users SET *`).
-		WithArgs(AnyTime{}, 1).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+		// Create a new response recorder
+		recorder := httptest.NewRecorder()
 
-	// Create a new response recorder
-	recorder := httptest.NewRecorder()
+		// Create a new request
+		request := httptest.NewRequest("DELETE", "/{id}", nil)
 
-	// Create a new request
-	request := httptest.NewRequest("DELETE", "/delete/123", nil)
+		// Set context for request
+		request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, ctx))
 
-	// Set context for request
-	request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, ctx))
+		if tc.WithMock {
+			setMockDelete(ts.mock, tc.WithMockError)
+		}
 
-	// Call the Delete method of the handler
-	ts.handler.Delete(recorder, request)
+		// Call the Delete method of the handler
+		ts.handler.Delete(recorder, request)
 
-	// Check the response status code
-	assert.Equal(ts.T(), http.StatusNoContent, recorder.Result().StatusCode)
+		// Check the response status code
+		assert.Equal(ts.T(), tc.ExpectStatusCode, recorder.Result().StatusCode)
+	}
 }
 
 func (ts *TransactionSuite) TestDelete() {
-	ts.mock.ExpectExec(`UPDATE users SET *`).
-		WithArgs(AnyTime{}, 1).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+	setMockDelete(ts.mock, false)
 
 	err := Delete(ts.conn, int64(1))
 	assert.NoError(ts.T(), err)
+}
+
+func setMockDelete(mock sqlmock.Sqlmock, withError bool) {
+	exp := mock.ExpectExec(`UPDATE users SET *`).
+		WithArgs(AnyTime{}, 1)
+
+	if withError {
+		exp.WillReturnError(sql.ErrNoRows)
+	} else {
+		exp.WillReturnResult(sqlmock.NewResult(1, 1))
+	}
 }

@@ -2,7 +2,6 @@ package users
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,7 +12,6 @@ import (
 func (h *handler) Delete(rw http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		fmt.Println(err)
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}

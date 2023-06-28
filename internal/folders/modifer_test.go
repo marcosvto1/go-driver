@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -85,8 +84,6 @@ func TestModifier(t *testing.T) {
 	}
 
 	h.Modify(record, request)
-
-	fmt.Println(record)
 
 	err = mock.ExpectationsWereMet()
 	if err != nil {
