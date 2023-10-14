@@ -16,6 +16,7 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
+		fmt.Println("sdsd")
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}

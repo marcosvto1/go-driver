@@ -2,10 +2,10 @@ package folders
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -14,39 +14,87 @@ import (
 func (ts *TransactionSuite) TestCreate() {
 	defer ts.conn.Close()
 
-	expectedQuery := `INSERT INTO "folders" ("name", "parent_id", "modified_at")*`
-	ts.mock.ExpectExec(expectedQuery).
-		WithArgs(
-			"any_name_folder",
-			1,
-			sqlmock.AnyArg(),
-		).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+	entityInvalidData := Folder{
+		Name:     "",
+		ParentID: 0,
+	}
 
-	var b bytes.Buffer
-	err := json.NewEncoder(&b).Encode(ts.entity)
-	assert.NoError(ts.T(), err)
+	tcs := []struct {
+		Desc               string
+		ExpectedStatusCode int
+		WithMock           bool
+		WithMockErr        bool
+		Body               any
+	}{
+		{
+			Desc:               "Should return status 500 when body is invalid",
+			WithMock:           false,
+			WithMockErr:        false,
+			ExpectedStatusCode: http.StatusInternalServerError,
+			Body:               "",
+		},
+		{
+			Desc:               "Should return 400 if not body valid data",
+			WithMock:           false,
+			WithMockErr:        false,
+			ExpectedStatusCode: http.StatusBadRequest,
+			Body:               entityInvalidData,
+		},
+		{
+			Desc:               "Should return 500 when failed to create folder",
+			WithMock:           true,
+			WithMockErr:        true,
+			ExpectedStatusCode: http.StatusInternalServerError,
+			Body:               ts.entity,
+		},
+		{
+			Desc:               "Should return 200 when success",
+			WithMock:           true,
+			WithMockErr:        false,
+			ExpectedStatusCode: http.StatusCreated,
+			Body:               ts.entity,
+		},
+	}
 
-	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodPost, "/", &b)
+	for _, tc := range tcs {
+		if tc.WithMock {
+			setInsertMock(ts.mock, tc.WithMockErr)
+		}
 
-	ts.handler.Create(recorder, request)
+		var b bytes.Buffer
+		err := json.NewEncoder(&b).Encode(tc.Body)
+		assert.NoError(ts.T(), err)
 
-	assert.Equal(ts.T(), http.StatusCreated, recorder.Result().StatusCode)
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodPost, "/", &b)
+
+		ts.handler.Create(recorder, request)
+
+		assert.Equal(ts.T(), tc.ExpectedStatusCode, recorder.Result().StatusCode)
+	}
+
 }
 
 func (ts *TransactionSuite) TestInsert() {
 	defer ts.conn.Close()
 
-	expectedSQL := regexp.QuoteMeta(`INSERT INTO "folders" ("name", "parent_id", "modified_at") VALUES ($1, $2, $3)`)
-	ts.mock.ExpectExec(expectedSQL).
+	setInsertMock(ts.mock, false)
+
+	_, err := Insert(ts.conn, ts.entity)
+	assert.NoError(ts.T(), err)
+}
+
+func setInsertMock(mock sqlmock.Sqlmock, withMockErr bool) {
+	expectedQuery := `INSERT INTO "folders" ("name", "parent_id", "modified_at")*`
+	mExpect := mock.ExpectExec(expectedQuery).
 		WithArgs(
 			"any_name_folder",
 			1,
 			sqlmock.AnyArg(),
-		).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	_, err := Insert(ts.conn, ts.entity)
-	assert.NoError(ts.T(), err)
+		)
+	if withMockErr {
+		mExpect.WillReturnError(sql.ErrNoRows)
+	} else {
+		mExpect.WillReturnResult(sqlmock.NewResult(1, 1))
+	}
 }

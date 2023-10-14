@@ -1,6 +1,9 @@
 package files
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 func Get(db *sql.DB, id int64) (*File, error) {
 	query := `SELECT
@@ -31,6 +34,7 @@ func Get(db *sql.DB, id int64) (*File, error) {
 	)
 
 	if err != nil {
+		fmt.Println("ENTROU AQUI")
 		return nil, err
 	}
 

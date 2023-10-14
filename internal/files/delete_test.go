@@ -2,6 +2,7 @@ package files
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 
@@ -13,32 +14,53 @@ import (
 func (ts *TransactionSuite) TestDeleteHTTP() {
 	defer ts.conn.Close()
 
-	ctx := chi.NewRouteContext()
-	ctx.URLParams.Add("id", "1")
+	tcs := []struct {
+		Desc               string
+		Id                 string
+		ExpectedStatusCode int
+		WithMock           bool
+		WithMockErr        bool
+	}{
+		{Desc: "Should returns status Not Content", Id: "1", ExpectedStatusCode: http.StatusNoContent, WithMock: true, WithMockErr: false},
+		{Desc: "Should return internal server error when invalid id", Id: "", ExpectedStatusCode: http.StatusInternalServerError, WithMock: false, WithMockErr: false},
+		{Desc: "Should return internal server error when failed to delete file", Id: "1", ExpectedStatusCode: http.StatusInternalServerError, WithMock: true, WithMockErr: true},
+	}
 
-	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodDelete, "/{id}", nil)
-	request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, ctx))
+	for _, tc := range tcs {
+		ts.T().Log(tc.Desc)
 
-	setMockDelete(ts.mock)
+		ctx := chi.NewRouteContext()
+		ctx.URLParams.Add("id", tc.Id)
 
-	ts.handler.Delete(recorder, request)
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodDelete, "/{id}", nil)
+		request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, ctx))
 
-	assert.Equal(ts.T(), http.StatusNoContent, recorder.Result().StatusCode)
+		if tc.WithMock {
+			setMockDelete(ts.mock, tc.WithMockErr)
+		}
+
+		ts.handler.Delete(recorder, request)
+
+		assert.Equal(ts.T(), tc.ExpectedStatusCode, recorder.Result().StatusCode)
+	}
 }
 
 func (ts *TransactionSuite) TestDelete() {
 	defer ts.conn.Close()
 
-	setMockDelete(ts.mock)
-
+	setMockDelete(ts.mock, false)
 	err := Delete(ts.conn, int64(1))
-
 	assert.NoError(ts.T(), err)
 }
 
-func setMockDelete(mock sqlmock.Sqlmock) {
-	mock.ExpectExec(`UPDATE files SET *`).
-		WithArgs(true, sqlmock.AnyArg(), 1).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+func setMockDelete(mock sqlmock.Sqlmock, withMockErr bool) {
+	expect := mock.ExpectExec(`UPDATE files SET *`).
+		WithArgs(true, sqlmock.AnyArg(), 1)
+
+	if withMockErr {
+		expect.WillReturnError(sql.ErrNoRows)
+	} else {
+		expect.WillReturnResult(sqlmock.NewResult(1, 1))
+	}
 }

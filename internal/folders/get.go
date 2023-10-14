@@ -3,6 +3,7 @@ package folders
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -19,6 +20,8 @@ func (h *handler) Get(rw http.ResponseWriter, r *http.Request) {
 
 	folder, err := GetFolder(h.db, int64(id))
 	if err != nil {
+		fmt.Println(err)
+
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -32,10 +35,13 @@ func (h *handler) Get(rw http.ResponseWriter, r *http.Request) {
 	fc := FolderContent{Folder: *folder, Content: c}
 
 	rw.Header().Add("Content-Type", "application/json")
+	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(fc)
 }
 
 func GetFolder(db *sql.DB, folderId int64) (*Folder, error) {
+	fmt.Println(folderId)
+
 	query := `SELECT
 	id,
 	name,
@@ -44,6 +50,8 @@ func GetFolder(db *sql.DB, folderId int64) (*Folder, error) {
 	modified_at,
 	deleted
 	FROM "folders" where id=$1`
+
+	fmt.Println(query)
 
 	row := db.QueryRow(query, folderId)
 

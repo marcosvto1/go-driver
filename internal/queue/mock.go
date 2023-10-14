@@ -1,10 +1,22 @@
 package queue
 
+import "errors"
+
+type MockQueueConfig struct {
+	PublishWillReturnErr bool
+}
+
 type MockQueueConnection struct {
-	q []*QueueDTO
+	q           []*QueueDTO
+	mockOptions MockQueueConfig
 }
 
 func (m *MockQueueConnection) Publish(b []byte) error {
+
+	if m.mockOptions.PublishWillReturnErr {
+		return errors.New("publish err")
+	}
+
 	dto := new(QueueDTO)
 	dto.Unmarshal(b)
 

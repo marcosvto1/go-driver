@@ -29,10 +29,11 @@ func New(qt QueueType, cfg any) (q *Queue, err error) {
 
 		q.qc = conn
 	case MockQueue:
+		cf := cfg.(MockQueueConfig)
 		q.qc = &MockQueueConnection{
-			make([]*QueueDTO, 0),
+			q:           make([]*QueueDTO, 0),
+			mockOptions: cf,
 		}
-
 	default:
 		log.Fatal("type not implemented")
 	}

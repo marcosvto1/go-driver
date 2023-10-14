@@ -3,6 +3,7 @@ package folders
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/marcosvto1/go-driver/internal/files"
@@ -11,6 +12,7 @@ import (
 func (h *handler) List(rw http.ResponseWriter, r *http.Request) {
 	c, err := GetRootFolderContent(h.db)
 	if err != nil {
+		fmt.Println(err.Error())
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -23,6 +25,7 @@ func (h *handler) List(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	rw.Header().Add("Content-Type", "application/json")
+	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(fc)
 }
 

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -66,7 +68,8 @@ func (ts *TransactionSuite) TestGetById() {
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
 
 		if tc.WithMock {
-			setMockSelect(ts.mock, tc.WithMocKError, tc.Err)
+			id, _ := strconv.Atoi(tc.Id)
+			setMockSelect(ts.mock, id, tc.WithMocKError, tc.Err)
 		}
 
 		ts.handler.GetById(rw, req)
@@ -76,7 +79,7 @@ func (ts *TransactionSuite) TestGetById() {
 }
 
 func (ts *TransactionSuite) TestGet() {
-	setMockSelect(ts.mock, false, nil)
+	setMockSelect(ts.mock, 1, false, nil)
 
 	userResult, err := Get(ts.conn, int64(1))
 	assert.NoError(ts.T(), err)
@@ -85,14 +88,14 @@ func (ts *TransactionSuite) TestGet() {
 	assert.Equal(ts.T(), "marcos@email", userResult.Login)
 }
 
-func setMockSelect(mock sqlmock.Sqlmock, withError bool, err error) {
+func setMockSelect(mock sqlmock.Sqlmock, id int, withError bool, err error) {
 	rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
 		AddRow(1, "Marcos", "marcos@email", "123", time.Now(), time.Now(), false, time.Now())
 
-	expect := mock.ExpectQuery(`SELECT id, name, login, password, created_at, modified_at, deleted, last_login
+	expectedSQL := regexp.QuoteMeta(`SELECT id, name, login, password, created_at, modified_at, deleted, last_login
 		FROM users
-		WHERE *
-	`).WithArgs(int64(1))
+		WHERE id = $1`)
+	expect := mock.ExpectQuery(expectedSQL).WithArgs(int64(id))
 
 	if withError {
 		expect.WillReturnError(err)

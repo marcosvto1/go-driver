@@ -37,8 +37,10 @@ func New(bt BucketType, cfg any) (b *Bucket, err error) {
 
 		b.provider = newAwsProvider(cfg.(AwsProviderConfig))
 	case MockProvider:
+		cf := cfg.(MockBucketConfig)
 		b.provider = &MockBucket{
-			content: make(map[string][]byte),
+			content:     make(map[string][]byte),
+			mockOptions: cf,
 		}
 	default:
 		log.Fatal("type not implemented")

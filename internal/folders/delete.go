@@ -2,6 +2,7 @@ package folders
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -83,11 +84,13 @@ func deleteSubFolders(db *sql.DB, folderId int64) error {
 func deleteFiles(db *sql.DB, folderId int64) error {
 	listOfFiles, err := files.List(db, folderId)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
 	removedFiles := make([]files.File, 0, len(listOfFiles))
 	for _, file := range listOfFiles {
+		fmt.Println("ok")
 		file.Deleted = true
 		err := files.Update(db, file.ID, &file)
 		if err != nil {

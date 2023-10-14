@@ -23,6 +23,7 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	err = folder.Validate()
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)

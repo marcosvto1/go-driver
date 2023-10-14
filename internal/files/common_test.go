@@ -25,10 +25,14 @@ func (ts *TransactionSuite) SetupTest() {
 	ts.conn, ts.mock, err = sqlmock.New()
 	assert.NoError(ts.T(), err)
 
-	mQueue, err := queue.New(queue.MockQueue, nil)
+	mQueue, err := queue.New(queue.MockQueue, queue.MockQueueConfig{
+		PublishWillReturnErr: false,
+	})
 	assert.NoError(ts.T(), err)
 
-	mBucket, err := bucket.New(bucket.MockProvider, nil)
+	mBucket, err := bucket.New(bucket.MockProvider, bucket.MockBucketConfig{
+		UpdateWillReturnErr: false,
+	})
 	assert.NoError(ts.T(), err)
 
 	ts.handler = handler{
