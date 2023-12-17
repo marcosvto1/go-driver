@@ -29,7 +29,8 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entity, err := New(1, fileHeader.Filename, fileHeader.Header.Get("Content-Type"), path)
+	userId := r.Context().Value("user_id").(int64)
+	entity, err := New(userId, fileHeader.Filename, fileHeader.Header.Get("Content-Type"), path)
 	if err != nil {
 		h.bucket.Delete(path)
 

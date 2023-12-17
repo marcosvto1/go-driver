@@ -46,6 +46,10 @@ func New(name, login, password string) (*User, error) {
 	return &u, nil
 }
 
+func encPass(p string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(p)))
+}
+
 func (u *User) SetPassword(password string) error {
 	if password == "" {
 		return ErrPasswordRequired
@@ -55,7 +59,7 @@ func (u *User) SetPassword(password string) error {
 		return ErrPasswordLen
 	}
 
-	u.Password = fmt.Sprintf("%s", md5.Sum([]byte(password)))
+	u.Password = encPass(password)
 
 	return nil
 }
@@ -69,10 +73,18 @@ func (u *User) Validate() error {
 		return ErrLoginRequired
 	}
 
-	blankPassword := fmt.Sprintf("%x", md5.Sum([]byte("")))
+	blankPassword := encPass("")
 	if u.Password == blankPassword {
 		return ErrPasswordRequired
 	}
 
 	return nil
+}
+
+func (u *User) GetId() int64 {
+	return u.ID
+}
+
+func (u *User) GetName() string {
+	return u.Name
 }
