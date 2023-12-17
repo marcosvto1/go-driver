@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/marcosvto1/go-driver/internal/auth"
 )
 
 type handler struct {
@@ -15,9 +16,14 @@ func SetRoute(r chi.Router, db *sql.DB) {
 		db: db,
 	}
 
-	r.Post("", h.Create)
-	r.Put("/{id}", h.Modify)
-	r.Get("/{id}", h.Get)
-	r.Delete("/{id}", h.Delete)
-	r.Get("/", h.List)
+	r.Route("/folders", func(r chi.Router) {
+		r.Use(auth.Validate)
+
+		r.Post("", h.Create)
+		r.Put("/{id}", h.Modify)
+		r.Get("/{id}", h.Get)
+		r.Delete("/{id}", h.Delete)
+		r.Get("/", h.List)
+	})
+
 }

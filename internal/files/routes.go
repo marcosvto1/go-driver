@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/marcosvto1/go-driver/internal/auth"
 	"github.com/marcosvto1/go-driver/internal/bucket"
 	"github.com/marcosvto1/go-driver/internal/queue"
 )
@@ -21,7 +22,12 @@ func SetRoutes(r chi.Router, db *sql.DB, bucket *bucket.Bucket, queue *queue.Que
 		queue:  queue,
 	}
 
-	r.Put("/{id}", h.Modify)
-	r.Post("", h.Create)
-	r.Delete("/{id}", h.Delete)
+	r.Route("/files", func(r chi.Router) {
+		r.Use(auth.Validate)
+
+		r.Put("/{id}", h.Modify)
+		r.Post("", h.Create)
+		r.Delete("/{id}", h.Delete)
+	})
+
 }
