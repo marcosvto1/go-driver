@@ -2,6 +2,8 @@ package queue
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
@@ -26,8 +28,11 @@ func newRabbitConn(cfg RabbitMQConfig) (rc *RabbitConnection, err error) {
 }
 
 func (rc *RabbitConnection) Publish(msg []byte) error {
+	log.Println("Publish WITH Rabbit")
+
 	c, err := rc.conn.Channel()
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 
@@ -37,31 +42,47 @@ func (rc *RabbitConnection) Publish(msg []byte) error {
 		Body:        msg,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	return c.PublishWithContext(ctx, "", rc.cfg.TopicName, false, false, mp)
-}
-
-func (rc *RabbitConnection) Consume(cdto chan<- QueueDTO) error {
-	c, err := rc.conn.Channel()
+	err = c.PublishWithContext(ctx, "", rc.cfg.TopicName, false, false, mp)
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 
-	q, err := c.QueueDeclare(rc.cfg.TopicName, false, false, false, false, nil)
+	return nil
+}
+
+func (rc *RabbitConnection) Consume(cdto chan<- QueueDTO) error {
+	log.Println("Consume WITH Rabbit")
+
+	c, err := rc.conn.Channel()
 	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	defer c.Close()
+
+	q, err := c.QueueDeclare(rc.cfg.TopicName, true, false, false, false, nil)
+	if err != nil {
+		log.Println(err.Error())
 		return err
 	}
 
 	msgs, err := c.Consume(q.Name, "", true, false, false, false, nil)
 	if err != nil {
+		log.Println(err.Error())
 		return err
 	}
 
 	for msg := range msgs {
+		log.Printf("Received message")
+
 		dto := QueueDTO{}
 		dto.Unmarshal(msg.Body)
+
 		cdto <- dto
 	}
 

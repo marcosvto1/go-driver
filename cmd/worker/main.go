@@ -11,11 +11,15 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/joho/godotenv"
 	"github.com/marcosvto1/go-driver/internal/bucket"
 	"github.com/marcosvto1/go-driver/internal/queue"
 )
 
 func main() {
+	if err := godotenv.Load(".env"); err != nil {
+		log.Fatal(err)
+	}
 	// RabbitMQ config
 	qcfg := queue.RabbitMQConfig{
 		URL:       os.Getenv("RABBIT_URL"),
@@ -29,8 +33,7 @@ func main() {
 	}
 
 	c := make(chan queue.QueueDTO)
-
-	qc.Consume(c)
+	go qc.Consume(c)
 
 	// Bucket AWS Provider Config
 	bcfg := bucket.AwsProviderConfig{
@@ -38,7 +41,7 @@ func main() {
 			Region:      aws.String(os.Getenv("AWS_REGION")),
 			Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_KEY"), os.Getenv("AWS_SECRET"), ""),
 		},
-		BucketDownload: "drive-raw",
+		BucketDownload: "driver-raw",
 		BucketUpload:   "drive-compact-gzip",
 	}
 
@@ -47,11 +50,19 @@ func main() {
 		panic(err)
 	}
 
+	log.Println("Starting worker")
+
 	for msg := range c {
+		log.Printf("Received message")
+
 		src := fmt.Sprintf("%s/%s", msg.Path, msg.Filename)
 		dst := fmt.Sprintf("%d_%s", msg.ID, msg.Filename)
+
+		fmt.Println(src, dst)
+
 		file, err := b.Download(src, dst)
 		if err != nil {
+			fmt.Print("xxx2")
 			log.Printf("ERROR: %v", err)
 			continue
 		}
@@ -93,4 +104,5 @@ func main() {
 			continue
 		}
 	}
+
 }

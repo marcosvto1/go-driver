@@ -23,5 +23,6 @@ go.work
 .pgdata
 .idea
 output
+.env
 
 !./scripts/shell/env.sh

@@ -61,8 +61,6 @@ func getSessions() (*sql.DB, *bucket.Bucket, *queue.Queue) {
 		Timeout:   time.Now().Add(30 * time.Second),
 	}
 
-	fmt.Println(qcfg)
-
 	qc, err := queue.New(queue.RabbitMQ, qcfg)
 
 	if err != nil {
@@ -75,8 +73,8 @@ func getSessions() (*sql.DB, *bucket.Bucket, *queue.Queue) {
 			Region:      aws.String(os.Getenv("AWS_REGION")),
 			Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_KEY"), os.Getenv("AWS_SECRET"), ""),
 		},
-		BucketDownload: "drive-raw",
-		BucketUpload:   "drive-compact-gzip",
+		BucketDownload: "drive-compact-gzip",
+		BucketUpload:   "driver-raw",
 	}
 
 	b, err := bucket.New(bucket.AwsProvider, bcfg)
