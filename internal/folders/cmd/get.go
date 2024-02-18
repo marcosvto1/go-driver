@@ -3,49 +3,52 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/marcosvto1/go-driver/internal/folders"
 	"github.com/marcosvto1/go-driver/pkg/requests"
 	"github.com/spf13/cobra"
 )
 
-func listFolders() *cobra.Command {
+func getFolder() *cobra.Command {
+
+	var id int32
+
 	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "List folders",
+		Use:   "get",
+		Short: "get a folder",
 		Run: func(cmd *cobra.Command, args []string) {
-			path := "/folders"
+			path := "/folders/" + fmt.Sprintf("%d", id)
+			if id <= 0 {
+				log.Fatal("Folder id is required")
+			}
 
 			res, err := requests.AuthenticatedGet(path)
 			if err != nil {
-				fmt.Printf("%v", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
 			var fc folders.FolderContent
 			err = json.Unmarshal(res, &fc)
 			if err != nil {
-				fmt.Printf("%v", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
 			fmt.Println("name:", fc.Folder.Name)
-			fmt.Println("######### CONTENT ##########")
-			var rows []table.Row
-			for _, c := range fc.Content {
-				rows = append(rows, table.Row{c.ID, c.Type, c.Name})
+			fmt.Println("####### CONTENT ###########")
+			if len(fc.Content) == 0 {
+				fmt.Println("Folder is empty")
 			}
-
-			t := table.NewWriter()
-			t.AppendHeader(table.Row{"ID", "Type", "Name"})
-			t.AppendRows(rows)
-
-			fmt.Println(t.Render())
-
+			for _, c := range fc.Content {
+				fmt.Println(c.ID, " - ", c.Type, " - ", c.Name)
+			}
 		},
 	}
+
+	cmd.Flags().Int32VarP(&id, "id", "", 0, "Folder id")
 
 	return cmd
 }

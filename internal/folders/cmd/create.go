@@ -31,19 +31,19 @@ func createFolder() *cobra.Command {
 			var body bytes.Buffer
 			err := json.NewEncoder(&body).Encode(folder)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 				return
 			}
 
 			_, err = requests.AuthenticatedPost("/folders", &body)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 				return
 			}
 
-			log.Println("Pasta criada com sucesso")
+			log.Println("Pasta " + name + " criada com sucesso")
 		},
 	}
 

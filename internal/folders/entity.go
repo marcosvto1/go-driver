@@ -3,6 +3,8 @@ package folders
 import (
 	"errors"
 	"time"
+
+	"gopkg.in/guregu/null.v4"
 )
 
 var (
@@ -12,7 +14,7 @@ var (
 type Folder struct {
 	ID         int64     `json:"id"`
 	Name       string    `json:"name"`
-	ParentID   int64     `json:"parent_id"`
+	ParentID   null.Int  `json:"parent_id"`
 	CreatedAt  time.Time `json:"created_at"`
 	ModifiedAt time.Time `json:"modified_at"`
 	Deleted    bool      `json:"-"`
@@ -31,12 +33,12 @@ type FolderResource struct {
 	ModifiedAt time.Time `json:"modified_at"`
 }
 
-func New(name string, parentID int64) (*Folder, error) {
+func New(name string, parentID null.Int) (*Folder, error) {
 	f := Folder{
 		Name: name,
 	}
 
-	if parentID > 0 {
+	if parentID.IsZero() {
 		f.ParentID = parentID
 	}
 

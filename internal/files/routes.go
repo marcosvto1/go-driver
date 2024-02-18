@@ -26,7 +26,7 @@ func SetRoutes(r chi.Router, db *sql.DB, bucket *bucket.Bucket, queue *queue.Que
 		r.Use(auth.Validate)
 
 		r.Put("/{id}", h.Modify)
-		r.Post("", h.Create)
+		r.Post("/", h.Create)
 		r.Delete("/{id}", h.Delete)
 	})
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/guregu/null.v4"
 )
 
 func (ts *TransactionSuite) TestCreate() {
@@ -16,7 +17,7 @@ func (ts *TransactionSuite) TestCreate() {
 
 	entityInvalidData := Folder{
 		Name:     "",
-		ParentID: 0,
+		ParentID: null.Int{},
 	}
 
 	tcs := []struct {

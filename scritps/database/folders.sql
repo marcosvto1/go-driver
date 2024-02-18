@@ -3,7 +3,7 @@ CREATE TABLE folders(
     name varchar(60) NOT NULL,
     parent_id INT,
     created_at TIMESTAMP DEFAULT current_timestamp,
-    modifier_at TIMESTAMP NOT NULL,
+    modified_at TIMESTAMP NOT NULL,
     deleted bool NOT NULL DEFAULT false,
 
     PRIMARY KEY(id),

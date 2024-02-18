@@ -12,8 +12,8 @@ func (h *handler) List(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
 
+	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
-	rw.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(users)
 }
 
@@ -42,6 +42,8 @@ func FindAll(db *sql.DB) ([]User, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		user.Password = "###...####.#####"
 
 		users = append(users, user)
 	}

@@ -25,7 +25,7 @@ func Auth(path, user, pass string) error {
 		return err
 	}
 
-	res, err := doRequest("POST", path, &body, false)
+	res, err := doRequest("POST", path, &body, nil, false)
 	if err != nil {
 		return err
 	}
@@ -51,8 +51,14 @@ func createTokenCache(body io.ReadCloser) error {
 		return err
 	}
 
+	var jsonToken struct {
+		Token string `json:"access_token"`
+	}
+
+	json.Unmarshal(token, &jsonToken)
+
 	cache := cacheToken{
-		Token: string(token),
+		Token: string(jsonToken.Token),
 	}
 
 	data, err := json.Marshal(cache)

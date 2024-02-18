@@ -12,6 +12,7 @@ func Register(c *cobra.Command) {
 	cmd.AddCommand(listFolders())
 	cmd.AddCommand(updateFolder())
 	cmd.AddCommand(deleteFolder())
+	cmd.AddCommand(getFolder())
 
 	c.AddCommand(cmd)
 }

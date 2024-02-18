@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = "asdADSDczzaJKLAKJjjJaskjd0999102"
+var jwtSecret = "asdADSDczzaJKLAKJjjJaskj2"
 
 type Credentials struct {
 	Username string `json:"username"`
@@ -34,7 +34,7 @@ func createToken(user Authenticated) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString(jwtSecret)
+	return token.SignedString([]byte(jwtSecret))
 }
 
 func (h *handler) auth(rw http.ResponseWriter, r *http.Request) {
@@ -58,8 +58,8 @@ func (h *handler) auth(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// retornar o token
-	rw.WriteHeader(http.StatusOK)
+
 	rw.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(rw).Encode(token)
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(map[string]string{"access_token": token})
 }

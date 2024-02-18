@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 	"github.com/marcosvto1/go-driver/internal/auth"
 	"github.com/marcosvto1/go-driver/internal/bucket"
 	"github.com/marcosvto1/go-driver/internal/files"
@@ -21,6 +22,10 @@ import (
 )
 
 func main() {
+	if err := godotenv.Load(".env"); err != nil {
+		log.Fatal(err)
+	}
+
 	db, b, qc := getSessions()
 	defer db.Close()
 
@@ -31,6 +36,7 @@ func main() {
 	r.Post("/auth", auth.HandleAuth(func(login, pass string) (auth.Authenticated, error) {
 		return users.Authenticate(login, pass)
 	}))
+
 	files.SetRoutes(r, db, b, qc)
 	folders.SetRoute(r, db)
 	users.SetRoutes(r, db)
@@ -55,7 +61,10 @@ func getSessions() (*sql.DB, *bucket.Bucket, *queue.Queue) {
 		Timeout:   time.Now().Add(30 * time.Second),
 	}
 
+	fmt.Println(qcfg)
+
 	qc, err := queue.New(queue.RabbitMQ, qcfg)
+
 	if err != nil {
 		log.Fatal(err)
 	}

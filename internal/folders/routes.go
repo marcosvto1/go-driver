@@ -19,7 +19,7 @@ func SetRoute(r chi.Router, db *sql.DB) {
 	r.Route("/folders", func(r chi.Router) {
 		r.Use(auth.Validate)
 
-		r.Post("", h.Create)
+		r.Post("/", h.Create)
 		r.Put("/{id}", h.Modify)
 		r.Get("/{id}", h.Get)
 		r.Delete("/{id}", h.Delete)

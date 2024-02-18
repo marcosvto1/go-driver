@@ -3,6 +3,8 @@ package files
 import (
 	"errors"
 	"time"
+
+	"gopkg.in/guregu/null.v4"
 )
 
 var (
@@ -14,7 +16,7 @@ var (
 
 type File struct {
 	ID         int64     `json:"id"`
-	FolderId   int64     `json:"-"`
+	FolderId   null.Int  `json:"-"`
 	OwnerId    int64     `json:"owner_id"`
 	Name       string    `json:"name"`
 	Type       string    `json:"type"`

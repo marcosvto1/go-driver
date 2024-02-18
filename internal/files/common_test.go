@@ -9,6 +9,7 @@ import (
 	"github.com/marcosvto1/go-driver/internal/queue"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/guregu/null.v4"
 )
 
 type TransactionSuite struct {
@@ -43,7 +44,7 @@ func (ts *TransactionSuite) SetupTest() {
 
 	ts.entity = &File{
 		Name:     "file.csv",
-		FolderId: 1,
+		FolderId: null.NewInt(1, true),
 		OwnerId:  1,
 		Type:     "application/octet-stream",
 		Path:     "/file.csv",

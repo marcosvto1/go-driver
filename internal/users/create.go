@@ -31,18 +31,23 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 
 	u.ID = id
 
-	rw.WriteHeader(http.StatusCreated)
 	rw.Header().Add("Content-Type", "application/json")
+	rw.WriteHeader(http.StatusCreated)
 	json.NewEncoder(rw).Encode(u)
 }
 
 func Insert(db *sql.DB, u *User) (int64, error) {
-	stmt := `INSERT INTO "users" ("name", "login", "password", "modified_at") VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO "users" ("name", "login", "password", "modified_at") VALUES ($1, $2, $3, $4) RETURNING id`
 
-	result, err := db.Exec(stmt, u.Name, u.Login, u.Password, u.ModifiedAt)
+	stmt, err := db.Prepare(query)
 	if err != nil {
 		return -1, err
 	}
 
-	return result.LastInsertId()
+	err = stmt.QueryRow(u.Name, u.Login, u.Password, u.ModifiedAt).Scan(&u.ID)
+	if err != nil {
+		return -1, err
+	}
+
+	return u.ID, nil
 }

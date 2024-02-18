@@ -36,7 +36,7 @@ func Get(db *sql.DB, id int64) (*User, error) {
 	q := `
 		SELECT id, name, login, password, created_at, modified_at, deleted, last_login
 		FROM users
-		WHERE id = $1"
+		WHERE id = $1
 	`
 	err := db.QueryRow(q, id).Scan(
 		&user.ID,
@@ -48,6 +48,9 @@ func Get(db *sql.DB, id int64) (*User, error) {
 		&user.Deleted,
 		&user.LastLogin,
 	)
+
+	user.Password = "###...####.#####"
+
 	if err != nil {
 		return nil, err
 	}

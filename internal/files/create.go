@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/marcosvto1/go-driver/internal/queue"
+	"gopkg.in/guregu/null.v4"
 )
 
 func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
@@ -16,7 +17,6 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		fmt.Println("sdsd")
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -45,7 +45,7 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		entity.FolderId = int64(fid)
+		entity.FolderId = null.NewInt(int64(fid), true)
 	}
 
 	id, err := InsertOne(h.db, entity)
@@ -75,8 +75,8 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rw.WriteHeader(http.StatusCreated)
 	rw.Header().Add("Content-Type", "application/json")
+	rw.WriteHeader(http.StatusCreated)
 	json.NewEncoder(rw).Encode(entity)
 }
 
@@ -84,20 +84,22 @@ func InsertOne(db *sql.DB, file *File) (id int64, err error) {
 	file.ModifiedAt = time.Now()
 
 	query := `INSERT INTO files (folder_id, owner_id, name, type, path, modified_at)
-	VALUES ($1, $2, $3, $4, $5, $6)`
+	VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 
-	result, err := db.Exec(query,
+	var lastInsertId int64
+
+	err = db.QueryRow(query,
 		file.FolderId,
 		file.OwnerId,
 		file.Name,
 		file.Type,
 		file.Path,
 		file.ModifiedAt,
-	)
+	).Scan(&lastInsertId)
 
 	if err != nil {
 		return -1, err
 	}
 
-	return result.LastInsertId()
+	return lastInsertId, nil
 }

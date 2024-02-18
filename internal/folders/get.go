@@ -20,14 +20,15 @@ func (h *handler) Get(rw http.ResponseWriter, r *http.Request) {
 
 	folder, err := GetFolder(h.db, int64(id))
 	if err != nil {
-		fmt.Println(err)
-
+		fmt.Println("xxxx1")
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	c, err := GetFolderContent(h.db, int64(id))
 	if err != nil {
+		fmt.Println("xxxx2")
+
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -111,6 +112,7 @@ func getSubFolder(db *sql.DB, folderId int64) ([]Folder, error) {
 func GetFolderContent(db *sql.DB, folderId int64) ([]FolderResource, error) {
 	listSubfolder, err := getSubFolder(db, folderId)
 	if err != nil {
+		fmt.Println("xxasdasd")
 		return nil, err
 	}
 
@@ -129,6 +131,7 @@ func GetFolderContent(db *sql.DB, folderId int64) ([]FolderResource, error) {
 
 	folderFiles, err := files.List(db, folderId)
 	if err != nil {
+		fmt.Println("xxasdasd")
 		return nil, err
 	}
 

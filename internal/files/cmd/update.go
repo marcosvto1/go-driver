@@ -7,20 +7,18 @@ import (
 	"log"
 	"os"
 
-	"github.com/marcosvto1/go-driver/internal/folders"
+	"github.com/marcosvto1/go-driver/internal/files"
 	"github.com/marcosvto1/go-driver/pkg/requests"
 	"github.com/spf13/cobra"
 )
 
-func updateFolder() *cobra.Command {
-	var (
-		id   int32
-		name string
-	)
+func updateFile() *cobra.Command {
+	var id int32
+	var name string
 
 	cmd := &cobra.Command{
 		Use:   "update",
-		Short: "Update a folder",
+		Short: "Update a file",
 		Run: func(cmd *cobra.Command, args []string) {
 			if id == 0 {
 				log.Println("id are required")
@@ -34,33 +32,33 @@ func updateFolder() *cobra.Command {
 				os.Exit(1)
 			}
 
-			path := fmt.Sprintf("/folders/%d", id)
+			path := fmt.Sprintf("/files/%d", id)
 
-			folder := folders.Folder{
+			file := files.File{
 				Name: name,
 			}
 
 			var body bytes.Buffer
-			err := json.NewEncoder(&body).Encode(folder)
+			err := json.NewEncoder(&body).Encode(file)
 			if err != nil {
-				log.Printf("%v", err)
-
+				fmt.Printf("%x", err)
 				cmd.Help()
 				os.Exit(1)
 			}
 
 			_, err = requests.AuthenticatedPut(path, &body)
 			if err != nil {
-				log.Printf("%v", err)
-
+				fmt.Printf("%x", err)
 				cmd.Help()
 				os.Exit(1)
 			}
+
+			fmt.Println("file updated")
 		},
 	}
 
-	cmd.Flags().Int32VarP(&id, "id", "", 0, "Folder id")
-	cmd.Flags().StringVarP(&name, "name", "n", "", "Folder Name")
+	cmd.Flags().Int32VarP(&id, "id", "", 0, "file id")
+	cmd.Flags().StringVarP(&name, "name", "n", "", "File name")
 
 	return cmd
 }

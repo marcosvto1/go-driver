@@ -19,6 +19,7 @@ type RabbitConnection struct {
 }
 
 func newRabbitConn(cfg RabbitMQConfig) (rc *RabbitConnection, err error) {
+	rc = new(RabbitConnection)
 	rc.cfg = cfg
 	rc.conn, err = amqp091.Dial(cfg.URL)
 	return rc, err

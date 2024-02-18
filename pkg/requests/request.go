@@ -7,12 +7,22 @@ import (
 	"net/http"
 )
 
-func doRequest(method string, path string, body io.Reader, auth bool) (*http.Response, error) {
-	url := fmt.Sprintf("http://localhost:8000%s", path)
+func doRequest(method string, path string, body io.Reader, headers map[string]string, auth bool) (*http.Response, error) {
+	url := fmt.Sprintf("http://localhost:3000%s", path)
 
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
+	}
+
+	if _, ok := headers["Content-Type"]; !ok {
+		req.Header.Add("Content-Type", "application/json")
+	}
+
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Add(k, v)
+		}
 	}
 
 	if auth {
