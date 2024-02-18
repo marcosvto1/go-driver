@@ -7,6 +7,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/guregu/null.v4"
 )
 
 type TransactionSuite struct {
@@ -26,7 +27,7 @@ func (ts *TransactionSuite) SetupTest() {
 		db: ts.conn,
 	}
 
-	ts.entity, err = New("any_name_folder", 1)
+	ts.entity, err = New("any_name_folder", null.NewInt(1, true))
 	assert.NoError(ts.T(), err)
 }
 
